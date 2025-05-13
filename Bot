@@ -1,28 +1,49 @@
-import asyncio
-from aiogram import Bot, Dispatcher, types
-from aiogram.enums import ParseMode
-from aiogram.types import Message
+from aiogram import Bot, Dispatcher, types, Router
 from aiogram.filters import Command
-from aiogram.client.default import DefaultBotProperties
+import asyncio
 
-BOT_TOKEN = "7818250011:AAElGd89ykjZoR5kEVW1-1lYssG3sFlfKTU"
+API_TOKEN = "7818250011:AAElGd89ykjZoR5kEVW1-1lYssG3sFlfKTU"
 
-bot = Bot(
-    token=BOT_TOKEN,
-    default=DefaultBotProperties(parse_mode=ParseMode.HTML),
-)
+bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
+router = Router()
 
-@dp.message(Command("poll"))
-async def send_poll(message: Message):
-    await message.answer_poll(
-        question="На какой стул сядешь",
-        options=["пики", "JavaScript", "хуи", "C++"],
-        is_anonymous=False,
-        allows_multiple_answers=False,
-    )
+# Список чатов, в которые добавлен бот
+chat_ids = []
 
+# Обработчик команды /start
+@router.message(Command("start"))
+async def start_command(message: types.Message):
+    # Создаем опрос
+    question = "Когда играем?"
+    options = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье", "Оффлайн", "Онлайн", "Оффлайн/Онлайн"]
+    
+    # Отправляем опрос в текущий чат
+    await message.answer_poll(question, options)
+    
+    await message.answer(f'Опрос "{question}" создан!')
+
+# Обработчик команды /poll для рассылки опроса во все чаты
+@router.message(Command("poll"))
+async def send_poll(message: types.Message):
+    question = "Когда играем?"
+    options = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье", "Оффлайн", "Онлайн", "Оффлайн/Онлайн"]
+    
+    # Рассылаем опрос во все чаты
+    for chat_id in chat_ids:
+        try:
+            await bot.send_poll(chat_id, question, options)
+        except Exception as e:
+            print(f"Ошибка при отправке опроса в чат {chat_id}: {e}")
+    
+    await message.answer(f'Опрос "{question}" был отправлен в {len(chat_ids)} чатов!')
+
+# Подключаем роутер к диспетчеру
+dp.include_router(router)
+
+# Главная функция для запуска бота
 async def main():
+    print("Бот запущен... ✅")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
