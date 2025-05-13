@@ -20,7 +20,7 @@ source venv/bin/activate
 echo "Обновляю pip и устанавливаю зависимости..."
 pip install --upgrade pip
 pip install aiogram
-
+pip install flask
 # Запускаем бота
 echo "Запускаю бота..."
 python botv2.py
