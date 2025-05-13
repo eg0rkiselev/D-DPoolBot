@@ -1,0 +1,40 @@
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command
+import logging
+from flask import Flask, request, jsonify
+
+API_TOKEN = "ВАШ_ТОКЕН_БОТА"
+WEBHOOK_URL = "https://ВАШ_ДОМЕН.pythonanywhere.com/bot"  # замените на ваш URL
+
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher()
+app = Flask(__name__)
+
+logging.basicConfig(level=logging.INFO, filename="chat_ids.log", filemode="a")
+
+@app.route("/bot", methods=["POST"])
+async def receive_update():
+    update = types.Update(**await request.get_json())
+    await dp.process_update(update)
+    return jsonify({"status": "ok"})
+
+@dp.message(Command("get_chat_id"))
+async def get_chat_id(message: types.Message):
+    chat_id = message.chat.id
+    logging.info(f"Chat ID: {chat_id}")
+    await message.answer(f"ID этого чата: <code>{chat_id}</code>")
+
+if __name__ == "__main__":
+    from aiogram import executor
+
+    async def on_startup():
+        await bot.set_webhook(WEBHOOK_URL)
+
+    executor.start_webhook(
+        dispatcher=dp,
+        webhook_path="/bot",
+        skip_updates=True,
+        on_startup=on_startup,
+        host="0.0.0.0",
+        port=5000
+    )
